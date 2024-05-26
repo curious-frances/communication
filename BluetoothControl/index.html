@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Remote Control</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto+Mono"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link href="css/normalize.css" rel="stylesheet" />
+    <link href="css/tabs.css" rel="stylesheet" />
+    <link href="css/styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="app">
+      <div class="toolbar">
+        <div id="device-name" class="name">Not Connected</div>
+        <div class="buttons">
+          <button id="connect" type="button" aria-label="Connect">
+            <i class="material-icons">bluetooth_connected</i>
+          </button>
+          <button id="disconnect" type="button" aria-label="Disconnect">
+            <i class="material-icons">bluetooth_disabled</i>
+          </button>
+        </div>
+      </div>
+      <div class="pc-tab">
+        <input checked="checked" id="tab1" type="radio" name="pct" />
+        <input id="tab2" type="radio" name="pct" />
+        <nav>
+          <ul>
+            <li class="tab1">
+              <label for="tab1">Control</label>
+            </li>
+            <li class="tab2">
+              <label for="tab2">Terminal</label>
+            </li>
+          </ul>
+        </nav>
+        <section>
+          <div class="tab1">
+            <div id="recv_text">Incoming Message</div>
+            <div
+              id="joyDiv"
+              style="
+                width: 200px;
+                height: 200px;
+                margin-bottom: 20px;
+                margin-left: auto;
+                margin-right: auto;
+              "
+            ></div>
+            <div class="slidecontainer">
+              <input
+                type="range"
+                min="-100"
+                max="100"
+                value="0"
+                class="slider"
+                id="myRange"
+                style="display: block; margin-left: auto; margin-right: auto"
+              />
+            </div>
+            <div class="buttoncontainder">
+              <button
+                type="button"
+                id="candy_button"
+                onclick="button_count+=1"
+                style="display: block; margin-left: auto; margin-right: auto"
+              >
+                Dispense Candy
+              </button>
+            </div>
+            <div id="sent_text"></div>
+          </div>
+          <div class="tab2 vexpand">
+            <div class="terminal-tab">
+              <div id="terminal_container" style="flex-grow: 1">
+                <div id="terminal" class="terminal"></div>
+              </div>
+              <form id="send-form" class="send-form">
+                <input
+                  id="input"
+                  type="text"
+                  aria-label="Input"
+                  autocomplete="off"
+                  placeholder="Type something to send..."
+                />
+                <button type="submit" aria-label="Send">
+                  <i class="material-icons">send</i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script src="js/BluetoothTerminal.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/joy.js"></script>
+    <script>
+      var joy = new JoyStick("joyDiv", {
+        internalFillColor: "#E97777",
+        internalStrokeColor: "#E97777",
+        externalStrokeColor: "#FF9F9F",
+        boundsType: "diamond",
+      });
+      var slider = document.getElementById("myRange");
+      var output = document.getElementById("sent_text");
+      var button_count = 0;
+      var tiltAngle = 0;
+
+      // Establish WebSocket connection
+      const socket = new WebSocket("ws://localhost:8081");
+
+      socket.onopen = () => {
+        console.log("Connected to server");
+      };
+
+      socket.onmessage = (event) => {
+        const data = event.data;
+        console.log(`Received: ${data}`);
+
+        if (data.startsWith("TILT")) {
+          tiltAngle = parseFloat(data.split(" ")[1]);
+          document.getElementById("recv_text").innerText =
+            `Tilt Angle: ${tiltAngle.toFixed(2)}°`;
+          // Perform actions based on tilt angle here
+        }
+      };
+
+      socket.onclose = () => {
+        console.log("Disconnected from server");
+      };
+
+      slider.oninput = function () {
+        output.innerHTML = "Slider value: " + this.value;
+      };
+
+      document.getElementById("candy_button").onclick = function () {
+        output.innerHTML = "Button clicked " + button_count + " times";
+      };
+    </script>
+  </body>
+</html>
