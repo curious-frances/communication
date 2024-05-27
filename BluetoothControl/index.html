@@ -55,25 +55,13 @@
                 margin-right: auto;
               "
             ></div>
-            <div class="slidecontainer">
-              <input
-                type="range"
-                min="-100"
-                max="100"
-                value="0"
-                class="slider"
-                id="myRange"
-                style="display: block; margin-left: auto; margin-right: auto"
-              />
-            </div>
-            <div class="buttoncontainder">
+            <div class="buttoncontainer">
               <button
                 type="button"
                 id="candy_button"
-                onclick="button_count+=1"
                 style="display: block; margin-left: auto; margin-right: auto"
               >
-                Dispense Candy
+                Pet Ladybug
               </button>
             </div>
             <div id="sent_text"></div>
@@ -110,7 +98,6 @@
         externalStrokeColor: "#FF9F9F",
         boundsType: "diamond",
       });
-      var slider = document.getElementById("myRange");
       var output = document.getElementById("sent_text");
       var button_count = 0;
       var tiltAngle = 0;
@@ -126,11 +113,11 @@
         const data = event.data;
         console.log(`Received: ${data}`);
 
-        if (data.startsWith("TILT")) {
+        if (data.startsWith("Yaw:")) {
           tiltAngle = parseFloat(data.split(" ")[1]);
           document.getElementById("recv_text").innerText =
             `Tilt Angle: ${tiltAngle.toFixed(2)}°`;
-          // Perform actions based on tilt angle here
+          console.log(`Updated tiltAngle: ${tiltAngle}`);
         }
       };
 
@@ -138,12 +125,30 @@
         console.log("Disconnected from server");
       };
 
-      slider.oninput = function () {
-        output.innerHTML = "Slider value: " + this.value;
-      };
+      setInterval(function () {
+        var x = joy.GetX() / 2;
+        var y = joy.GetY() / 2;
+        var tilt = (tiltAngle > 0) ? 50 - tiltAngle : -50 - tiltAngle;
+
+        var message;
+
+        if (tiltAngle < 0 || tiltAngle > 5) {
+          message = `S${x + tilt},${y},${button_count}E`;
+        } else {
+          message = `S${x},${y},${button_count}E`;
+        }
+
+        if (terminal.getDeviceName() != "") {
+          terminal.send(message).then(() => {});
+        }
+
+        console.log(message);
+        output.innerHTML = message;
+      }, 100);
 
       document.getElementById("candy_button").onclick = function () {
-        output.innerHTML = "Button clicked " + button_count + " times";
+        button_count += 1;
+        output.innerHTML = "Ladybug loves you " + button_count + " times";
       };
     </script>
   </body>
