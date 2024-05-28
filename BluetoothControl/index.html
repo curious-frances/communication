@@ -132,7 +132,7 @@
 
         var message;
 
-        if (tiltAngle < -3 || tiltAngle > 5) {
+        if (tiltAngle < 0 || tiltAngle > 6) {
           message = `S${x + tilt},${y},${button_count}E`;
         } else {
           message = `S${x},${y},${button_count}E`;
