@@ -128,11 +128,11 @@
       setInterval(function () {
         var x = joy.GetX() / 2;
         var y = joy.GetY() / 2;
-        var tilt = (tiltAngle > 0) ? 50 - tiltAngle : -50 - tiltAngle;
+        var tilt = tiltAngle > 0 ? 50 - tiltAngle : -50 - tiltAngle;
 
         var message;
 
-        if (tiltAngle < 0 || tiltAngle > 5) {
+        if (tiltAngle < -3 || tiltAngle > 5) {
           message = `S${x + tilt},${y},${button_count}E`;
         } else {
           message = `S${x},${y},${button_count}E`;
