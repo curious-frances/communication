@@ -4,14 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Remote Control</title>
-    <link
-      href="https://fonts.googleapis.com/css?family=Roboto+Mono"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link href="css/normalize.css" rel="stylesheet" />
     <link href="css/tabs.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
@@ -45,22 +39,9 @@
         <section>
           <div class="tab1">
             <div id="recv_text">Incoming Message</div>
-            <div
-              id="joyDiv"
-              style="
-                width: 200px;
-                height: 200px;
-                margin-bottom: 20px;
-                margin-left: auto;
-                margin-right: auto;
-              "
-            ></div>
+            <div id="joyDiv" style="width: 200px; height: 200px; margin-bottom: 20px; margin-left: auto; margin-right: auto;"></div>
             <div class="buttoncontainer">
-              <button
-                type="button"
-                id="candy_button"
-                style="display: block; margin-left: auto; margin-right: auto"
-              >
+              <button type="button" id="candy_button" style="display: block; margin-left: auto; margin-right: auto">
                 Pet Ladybug
               </button>
             </div>
@@ -72,13 +53,7 @@
                 <div id="terminal" class="terminal"></div>
               </div>
               <form id="send-form" class="send-form">
-                <input
-                  id="input"
-                  type="text"
-                  aria-label="Input"
-                  autocomplete="off"
-                  placeholder="Type something to send..."
-                />
+                <input id="input" type="text" aria-label="Input" autocomplete="off" placeholder="Type something to send..." />
                 <button type="submit" aria-label="Send">
                   <i class="material-icons">send</i>
                 </button>
@@ -92,12 +67,13 @@
     <script src="js/main.js"></script>
     <script src="js/joy.js"></script>
     <script>
-      var joy = new JoyStick("joyDiv", {
+      var joy = JoyStick("joyDiv", {
         internalFillColor: "#E97777",
         internalStrokeColor: "#E97777",
         externalStrokeColor: "#FF9F9F",
         boundsType: "diamond",
       });
+
       var output = document.getElementById("sent_text");
       var button_count = 0;
       var tiltAngle = 0;
