@@ -8,16 +8,16 @@ let StickStatus = {
 
 function JoyStick(container, parameters, callback) {
     parameters = parameters || {};
-    var title = (typeof parameters.title === "undefined" ? "joystick" : parameters.title),
-        width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
-        height = (typeof parameters.height === "undefined" ? 0 : parameters.height),
-        internalFillColor = (typeof parameters.internalFillColor === "undefined" ? "#00AA00" : parameters.internalFillColor),
-        internalLineWidth = (typeof parameters.internalLineWidth === "undefined" ? 2 : parameters.internalLineWidth),
-        internalStrokeColor = (typeof parameters.internalStrokeColor === "undefined" ? "#003300" : parameters.internalStrokeColor),
-        externalLineWidth = (typeof parameters.externalLineWidth === "undefined" ? 2 : parameters.externalLineWidth),
-        externalStrokeColor = (typeof parameters.externalStrokeColor === "undefined" ? "#008000" : parameters.externalStrokeColor),
-        autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter),
-        boundsType = (typeof parameters.boundsType === "undefined" ? "square" : parameters.boundsType);
+    var title = parameters.title || "joystick",
+        width = parameters.width || 0,
+        height = parameters.height || 0,
+        internalFillColor = parameters.internalFillColor || "#00AA00",
+        internalLineWidth = parameters.internalLineWidth || 2,
+        internalStrokeColor = parameters.internalStrokeColor || "#003300",
+        externalLineWidth = parameters.externalLineWidth || 2,
+        externalStrokeColor = parameters.externalStrokeColor || "#008000",
+        autoReturnToCenter = parameters.autoReturnToCenter !== undefined ? parameters.autoReturnToCenter : true,
+        boundsType = parameters.boundsType || "square";
 
     callback = callback || function(StickStatus) {};
 
@@ -40,10 +40,6 @@ function JoyStick(container, parameters, callback) {
     var externalRadius = internalRadius + 30;
     var centerX = canvas.width / 2;
     var centerY = canvas.height / 2;
-    var directionHorizontalLimitPos = canvas.width / 10;
-    var directionHorizontalLimitNeg = directionHorizontalLimitPos * -1;
-    var directionVerticalLimitPos = canvas.height / 10;
-    var directionVerticalLimitNeg = directionVerticalLimitPos * -1;
     var movedX = centerX;
     var movedY = centerY;
 
@@ -72,12 +68,6 @@ function JoyStick(container, parameters, callback) {
 
     function drawInternal() {
         context.beginPath();
-        if (boundsType === "square") {
-            if (movedX < internalRadius) { movedX = maxMoveStick; }
-            if ((movedX + internalRadius) > canvas.width) { movedX = canvas.width - maxMoveStick; }
-            if (movedY < internalRadius) { movedY = maxMoveStick; }
-            if ((movedY + internalRadius) > canvas.height) { movedY = canvas.height - maxMoveStick; }
-        }
         context.arc(movedX, movedY, internalRadius, 0, circumference, false);
         context.fillStyle = internalFillColor;
         context.fill();
@@ -94,15 +84,11 @@ function JoyStick(container, parameters, callback) {
         if (pressed === 1) {
             movedX = event.pageX - canvas.offsetLeft;
             movedY = event.pageY - canvas.offsetTop;
+            applyBounds();
             context.clearRect(0, 0, canvas.width, canvas.height);
             drawExternal();
             drawInternal();
-            StickStatus.xPosition = movedX;
-            StickStatus.yPosition = movedY;
-            StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-            StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-            StickStatus.cardinalDirection = getCardinalDirection();
-            callback(StickStatus);
+            updateStickStatus();
         }
     }
 
@@ -115,12 +101,7 @@ function JoyStick(container, parameters, callback) {
         context.clearRect(0, 0, canvas.width, canvas.height);
         drawExternal();
         drawInternal();
-        StickStatus.xPosition = movedX;
-        StickStatus.yPosition = movedY;
-        StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-        StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-        StickStatus.cardinalDirection = getCardinalDirection();
-        callback(StickStatus);
+        updateStickStatus();
     }
 
     function onTouchStart(event) {
@@ -131,15 +112,11 @@ function JoyStick(container, parameters, callback) {
         if (pressed === 1 && event.targetTouches[0].target === canvas) {
             movedX = event.targetTouches[0].pageX - canvas.offsetLeft;
             movedY = event.targetTouches[0].pageY - canvas.offsetTop;
+            applyBounds();
             context.clearRect(0, 0, canvas.width, canvas.height);
             drawExternal();
             drawInternal();
-            StickStatus.xPosition = movedX;
-            StickStatus.yPosition = movedY;
-            StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-            StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-            StickStatus.cardinalDirection = getCardinalDirection();
-            callback(StickStatus);
+            updateStickStatus();
         }
     }
 
@@ -152,12 +129,7 @@ function JoyStick(container, parameters, callback) {
         context.clearRect(0, 0, canvas.width, canvas.height);
         drawExternal();
         drawInternal();
-        StickStatus.xPosition = movedX;
-        StickStatus.yPosition = movedY;
-        StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-        StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-        StickStatus.cardinalDirection = getCardinalDirection();
-        callback(StickStatus);
+        updateStickStatus();
     }
 
     function onKeyDown(event) {
@@ -175,39 +147,48 @@ function JoyStick(container, parameters, callback) {
             case "ArrowRight":
                 movedX += stepSize;
                 break;
+            case " ": // acts like a brake :)
+                movedX = centerX;
+                movedY = centerY;
+                break;
             default:
                 return;
         }
-        if (boundsType == "square") {
-            if (movedX < internalRadius) { movedX = maxMoveStick; }
-            if ((movedX + internalRadius) > canvas.width) { movedX = canvas.width - maxMoveStick; }
-            if (movedY < internalRadius) { movedY = maxMoveStick; }
-            if ((movedY + internalRadius) > canvas.height) { movedY = canvas.height - maxMoveStick; }
-        } else if (boundsType == "circle") {
-            if ((movedX - centerX) ** 2 + (movedY - centerY) ** 2 > maxMoveStick ** 2) {
-                var diffX = movedX - centerX;
-                var diffY = movedY - centerY;
-                var length = Math.sqrt(diffX ** 2 + diffY ** 2);
-                movedX = centerX + maxMoveStick * diffX / length;
-                movedY = centerY + maxMoveStick * diffY / length;
-            }
-        } else if (boundsType == "diamond") {
-            var diffX = movedX - centerX;
-            var diffY = movedY - centerY;
-            var sum = diffX + diffY;
-            var dif = diffX - diffY;
-
-            sum = Math.min(Math.max(sum, -maxMoveStick), maxMoveStick);
-            dif = Math.min(Math.max(dif, -maxMoveStick), maxMoveStick);
-
-            movedX = centerX + (sum + dif) / 2;
-            movedY = centerY + (sum - dif) / 2;
-        } else {
-            console.log("bad parameter");
-        }
+        applyBounds();
         context.clearRect(0, 0, canvas.width, canvas.height);
         drawExternal();
         drawInternal();
+        updateStickStatus();
+    }
+
+    function applyBounds() {
+        if (boundsType === "square") {
+            if (movedX < internalRadius) { movedX = internalRadius; }
+            if (movedX > canvas.width - internalRadius) { movedX = canvas.width - internalRadius; }
+            if (movedY < internalRadius) { movedY = internalRadius; }
+            if (movedY > canvas.height - internalRadius) { movedY = canvas.height - internalRadius; }
+        } else if (boundsType === "circle") {
+            let distX = movedX - centerX;
+            let distY = movedY - centerY;
+            let distance = Math.sqrt(distX * distX + distY * distY);
+            if (distance > maxMoveStick) {
+                movedX = centerX + (distX / distance) * maxMoveStick;
+                movedY = centerY + (distY / distance) * maxMoveStick;
+            }
+        } else if (boundsType === "diamond") {
+            let diffX = Math.abs(movedX - centerX);
+            let diffY = Math.abs(movedY - centerY);
+            if (diffX + diffY > maxMoveStick) {
+                let scale = maxMoveStick / (diffX + diffY);
+                movedX = centerX + (movedX - centerX) * scale;
+                movedY = centerY + (movedY - centerY) * scale;
+            }
+        } else {
+            console.log("bad parameter");
+        }
+    }
+
+    function updateStickStatus() {
         StickStatus.xPosition = movedX;
         StickStatus.yPosition = movedY;
         StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
@@ -220,23 +201,23 @@ function JoyStick(container, parameters, callback) {
         var result = "";
         var horizontal = movedX - centerX;
         var vertical = movedY - centerY;
-        if (vertical >= directionVerticalLimitNeg && vertical <= directionVerticalLimitPos) {
+        if (vertical >= -10 && vertical <= 10) {
             result = "C";
         }
-        if (vertical < directionVerticalLimitNeg) {
+        if (vertical < -10) {
             result = "N";
         }
-        if (vertical > directionVerticalLimitPos) {
+        if (vertical > 10) {
             result = "S";
         }
-        if (horizontal < directionHorizontalLimitNeg) {
+        if (horizontal < -10) {
             if (result === "C") {
                 result = "W";
             } else {
                 result += "W";
             }
         }
-        if (horizontal > directionHorizontalLimitPos) {
+        if (horizontal > 10) {
             if (result === "C") {
                 result = "E";
             } else {

@@ -104,7 +104,9 @@
       setInterval(function () {
         var x = joy.GetX() / 2;
         var y = joy.GetY() / 2;
-        var tilt = tiltAngle > 0 ? 50 - tiltAngle : -50 - tiltAngle;
+        var posDir = Math.min(38 + tiltAngle, 50);
+        var negDir = Math.max(-38 + tiltAngle, -50);
+        var tilt = tiltAngle > 0 ? posDir : negDir;
 
         var message;
 
