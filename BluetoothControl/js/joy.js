@@ -1,50 +1,3 @@
-/*
- * Name          : joy.js
- * @author       : Roberto D'Amico (Bobboteck)
- * Last modified : 09.06.2020
- * Revision      : 1.1.6
- *
- * Modification History:
- * Date         Version     Modified By     Description
- * 2021-12-21   2.0.0       Roberto D'Amico New version of the project that integrates the callback functions, while 
- *                                          maintaining compatibility with previous versions. Fixed Issue #27 too, 
- *                                          thanks to @artisticfox8 for the suggestion.
- * 2020-06-09   1.1.6       Roberto D'Amico Fixed Issue #10 and #11
- * 2020-04-20   1.1.5       Roberto D'Amico Correct: Two sticks in a row, thanks to @liamw9534 for the suggestion
- * 2020-04-03               Roberto D'Amico Correct: InternalRadius when change the size of canvas, thanks to 
- *                                          @vanslipon for the suggestion
- * 2020-01-07   1.1.4       Roberto D'Amico Close #6 by implementing a new parameter to set the functionality of 
- *                                          auto-return to 0 position
- * 2019-11-18   1.1.3       Roberto D'Amico Close #5 correct indication of East direction
- * 2019-11-12   1.1.2       Roberto D'Amico Removed Fix #4 incorrectly introduced and restored operation with touch 
- *                                          devices
- * 2019-11-12   1.1.1       Roberto D'Amico Fixed Issue #4 - Now JoyStick work in any position in the page, not only 
- *                                          at 0,0
- * 
- * The MIT License (MIT)
- *
- *  This file is part of the JoyStick Project (https://github.com/bobboteck/JoyStick).
- *	Copyright (c) 2015 Roberto D'Amico (Bobboteck).
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 let StickStatus =
 {
     xPosition: 0,
@@ -99,7 +52,7 @@ var JoyStick = (function(container, parameters, callback)
     canvas.width = width;
     canvas.height = height;
     objContainer.appendChild(canvas);
-    var context=canvas.getContext("2d");
+    var context = canvas.getContext("2d");
 
     var pressed = 0; // Bool - 1=Yes - 0=No
     var circumference = 2 * Math.PI;
@@ -113,8 +66,8 @@ var JoyStick = (function(container, parameters, callback)
     var directionVerticalLimitPos = canvas.height / 10;
     var directionVerticalLimitNeg = directionVerticalLimitPos * -1;
     // Used to save current position of stick
-    var movedX=centerX;
-    var movedY=centerY;
+    var movedX = centerX;
+    var movedY = centerY;
 
     // Check if the device support the touch or not
     if("ontouchstart" in document.documentElement)
@@ -129,6 +82,10 @@ var JoyStick = (function(container, parameters, callback)
         document.addEventListener("mousemove", onMouseMove, false);
         document.addEventListener("mouseup", onMouseUp, false);
     }
+
+    // Add event listener for arrow keys
+    document.addEventListener("keydown", onKeyDown, false);
+
     // Draw the object
     drawExternal();
     drawInternal();
@@ -156,35 +113,33 @@ var JoyStick = (function(container, parameters, callback)
     {
         context.beginPath();
 
-	if (boundsType == "square"){
-		if(movedX<internalRadius) { movedX=maxMoveStick; }
-		if((movedX+internalRadius) > canvas.width) { movedX = canvas.width-(maxMoveStick); }
-		if(movedY<internalRadius) { movedY=maxMoveStick; }
-		if((movedY+internalRadius) > canvas.height) { movedY = canvas.height-(maxMoveStick); }
+        if (boundsType == "square"){
+            if(movedX < internalRadius) { movedX = maxMoveStick; }
+            if((movedX + internalRadius) > canvas.width) { movedX = canvas.width - maxMoveStick; }
+            if(movedY < internalRadius) { movedY = maxMoveStick; }
+            if((movedY + internalRadius) > canvas.height) { movedY = canvas.height - maxMoveStick; }
+        } else if (boundsType == "circle"){
+            if ( (movedX - centerX)**2 + (movedY - centerY)**2 > maxMoveStick**2){
+                var diffX = movedX - centerX;
+                var diffY = movedY - centerY;
+                var length = Math.sqrt(diffX**2 + diffY**2);
+                movedX = centerX + maxMoveStick * diffX / length;
+                movedY = centerY + maxMoveStick * diffY / length;
+            }
+        } else if (boundsType == "diamond"){
+            var diffX = movedX - centerX;
+            var diffY = movedY - centerY;
+            var sum = diffX + diffY;
+            var dif = diffX - diffY;
 
-	} else if (boundsType == "circle"){
-		if ( (movedX - centerX)**2 + (movedY - centerY)**2 > maxMoveStick**2){
-			var diffX = movedX - centerX;
-			var diffY = movedY - centerY;
-			var length = (diffX**2 + diffY**2)**0.5;
-			movedX = centerX + maxMoveStick * diffX/length;
-			movedY = centerY + maxMoveStick * diffY/length;
-		}
-	} else if (boundsType == "diamond"){
-			var diffX = movedX - centerX;
-			var diffY = movedY - centerY;
-			var sum = diffX + diffY;
-			var dif = diffX - diffY;
+            sum = Math.min(Math.max(sum, -maxMoveStick), maxMoveStick);
+            dif = Math.min(Math.max(dif, -maxMoveStick), maxMoveStick);
 
-			sum = Math.min(Math.max(sum, -maxMoveStick), maxMoveStick);
-			dif = Math.min(Math.max(dif, -maxMoveStick), maxMoveStick);
-
-			movedX = centerX + (sum + dif)/2;
-			movedY = centerY + (sum - dif)/2;
-	} else {
-		console.log("bad parameter");
-	}
-
+            movedX = centerX + (sum + dif) / 2;
+            movedY = centerY + (sum - dif) / 2;
+        } else {
+            console.log("bad parameter");
+        }
 
         context.arc(movedX, movedY, internalRadius, 0, circumference, false);
         // create radial gradient
@@ -237,9 +192,10 @@ var JoyStick = (function(container, parameters, callback)
             StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
             StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
             StickStatus.cardinalDirection = getCardinalDirection();
+            // Trigger the callback
             callback(StickStatus);
         }
-    } 
+    }
 
     function onTouchEnd(event) 
     {
@@ -262,6 +218,7 @@ var JoyStick = (function(container, parameters, callback)
         StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
         StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
         StickStatus.cardinalDirection = getCardinalDirection();
+        // Trigger the callback
         callback(StickStatus);
     }
 
@@ -273,10 +230,9 @@ var JoyStick = (function(container, parameters, callback)
         pressed = 1;
     }
 
-    /* To simplify this code there was a new experimental feature here: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/offsetX , but it present only in Mouse case not metod presents in Touch case :-( */
     function onMouseMove(event) 
     {
-        if(pressed === 1)
+        if(pressed === 1 && event.target === canvas)
         {
             movedX = event.pageX;
             movedY = event.pageY;
@@ -303,6 +259,7 @@ var JoyStick = (function(container, parameters, callback)
             StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
             StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
             StickStatus.cardinalDirection = getCardinalDirection();
+            // Trigger the callback
             callback(StickStatus);
         }
     }
@@ -328,14 +285,87 @@ var JoyStick = (function(container, parameters, callback)
         StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
         StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
         StickStatus.cardinalDirection = getCardinalDirection();
+        // Trigger the callback
         callback(StickStatus);
     }
 
+    /**
+     * @desc Events for manage keyboard
+     */
+    function onKeyDown(event) 
+    {
+        const stepSize = 5;
+        switch(event.key) {
+            case "ArrowUp":
+                movedY -= stepSize;
+                break;
+            case "ArrowDown":
+                movedY += stepSize;
+                break;
+            case "ArrowLeft":
+                movedX -= stepSize;
+                break;
+            case "ArrowRight":
+                movedX += stepSize;
+                break;
+            default:
+                return;
+        }
+
+        // Keep joystick within bounds
+        if (boundsType == "square"){
+            if(movedX < internalRadius) { movedX = maxMoveStick; }
+            if((movedX + internalRadius) > canvas.width) { movedX = canvas.width - maxMoveStick; }
+            if(movedY < internalRadius) { movedY = maxMoveStick; }
+            if((movedY + internalRadius) > canvas.height) { movedY = canvas.height - maxMoveStick; }
+        } else if (boundsType == "circle"){
+            if ( (movedX - centerX)**2 + (movedY - centerY)**2 > maxMoveStick**2){
+                var diffX = movedX - centerX;
+                var diffY = movedY - centerY;
+                var length = Math.sqrt(diffX**2 + diffY**2);
+                movedX = centerX + maxMoveStick * diffX / length;
+                movedY = centerY + maxMoveStick * diffY / length;
+            }
+        } else if (boundsType == "diamond"){
+            var diffX = movedX - centerX;
+            var diffY = movedY - centerY;
+            var sum = diffX + diffY;
+            var dif = diffX - diffY;
+
+            sum = Math.min(Math.max(sum, -maxMoveStick), maxMoveStick);
+            dif = Math.min(Math.max(dif, -maxMoveStick), maxMoveStick);
+
+            movedX = centerX + (sum + dif) / 2;
+            movedY = centerY + (sum - dif) / 2;
+        } else {
+            console.log("bad parameter");
+        }
+
+        // Delete canvas
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        // Redraw object
+        drawExternal();
+        drawInternal();
+
+        // Set attribute of callback
+        StickStatus.xPosition = movedX;
+        StickStatus.yPosition = movedY;
+        StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
+        StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
+        StickStatus.cardinalDirection = getCardinalDirection();
+        // Trigger the callback
+        callback(StickStatus);
+    }
+
+    /**
+     * @desc Get the cardinal direction
+     * @return {String}
+     */
     function getCardinalDirection()
     {
-        let result = "";
-        let orizontal = movedX - centerX;
-        let vertical = movedY - centerY;
+        var result = "";
+        var horizontal = movedX - centerX;
+        var vertical = movedY - centerY;
         
         if(vertical >= directionVerticalLimitNeg && vertical <= directionVerticalLimitPos)
         {
@@ -350,7 +380,7 @@ var JoyStick = (function(container, parameters, callback)
             result = "S";
         }
         
-        if(orizontal < directionHorizontalLimitNeg)
+        if(horizontal < directionHorizontalLimitNeg)
         {
             if(result === "C")
             { 
@@ -361,7 +391,7 @@ var JoyStick = (function(container, parameters, callback)
                 result += "W";
             }
         }
-        if(orizontal > directionHorizontalLimitPos)
+        if(horizontal > directionHorizontalLimitPos)
         {
             if(result === "C")
             { 
@@ -376,70 +406,68 @@ var JoyStick = (function(container, parameters, callback)
         return result;
     }
 
-    /******************************************************
-     * Public methods
-     *****************************************************/
+    return {
+        /**
+         * @desc The width of canvas
+         * @return {Int}
+         */
+        GetWidth: function () 
+        {
+            return canvas.width;
+        },
+        
+        /**
+         * @desc The height of canvas
+         * @return {Int}
+         */
+        GetHeight: function () 
+        {
+            return canvas.height;
+        },
+        
+        /**
+         * @desc The X position of the cursor relative to the canvas that contains it
+         * @return {Int}
+         */
+        GetPosX: function ()
+        {
+            return movedX;
+        },
+        
+        /**
+         * @desc The Y position of the cursor relative to the canvas that contains it
+         * @return {Int}
+         */
+        GetPosY: function () 
+        {
+            return movedY;
+        },
+        
+        /**
+         * @desc Normalized value of X move of stick
+         * @return {Int}
+         */
+        GetX: function () 
+        {
+            return (100*((movedX - centerX)/maxMoveStick)).toFixed();
+        },
 
-    /**
-     * @desc The width of canvas
-     * @return Number of pixel width 
-     */
-    this.GetWidth = function () 
-    {
-        return canvas.width;
-    };
+        /**
+         * @desc Normalized value of Y move of stick
+         * @return {Int}
+         */
+        GetY: function () 
+        {
+            return ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
+        },
 
-    /**
-     * @desc The height of canvas
-     * @return Number of pixel height
-     */
-    this.GetHeight = function () 
-    {
-        return canvas.height;
+        /**
+         * @desc Get the direction of the cursor as a string that indicates the cardinal points where this is oriented
+         * @return {String}
+         */
+        GetDir: function () 
+        {
+            return getCardinalDirection();
+        }
     };
-
-    /**
-     * @desc The X position of the cursor relative to the canvas that contains it and to its dimensions
-     * @return Number that indicate relative position
-     */
-    this.GetPosX = function ()
-    {
-        return movedX;
-    };
-
-    /**
-     * @desc The Y position of the cursor relative to the canvas that contains it and to its dimensions
-     * @return Number that indicate relative position
-     */
-    this.GetPosY = function ()
-    {
-        return movedY;
-    };
-
-    /**
-     * @desc Normalizzed value of X move of stick
-     * @return Integer from -100 to +100
-     */
-    this.GetX = function ()
-    {
-        return (100*((movedX - centerX)/maxMoveStick)).toFixed();
-    };
-
-    /**
-     * @desc Normalizzed value of Y move of stick
-     * @return Integer from -100 to +100
-     */
-    this.GetY = function ()
-    {
-        return ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-    };
-
-    /**
-     * @desc Get the direction of the cursor as a string that indicates the cardinal points where this is oriented
-     * @return String of cardinal point N, NE, E, SE, S, SW, W, NW and C when it is placed in the center
-     */
-    this.GetDir = function()
-    {
-        return getCardinalDirection();
-    };
-});
+})(container, parameters, callback);
